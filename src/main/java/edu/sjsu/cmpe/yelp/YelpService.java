@@ -1,11 +1,11 @@
 package edu.sjsu.cmpe.yelp;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.net.UnknownHostException;
-import java.util.Random;
 
 import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.codehaus.jettison.json.JSONTokener;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -29,19 +29,32 @@ public class YelpService {
 	 * @param args the arguments
 	 * @throws UnknownHostException the unknown host exception
 	 * @throws JSONException 
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) throws UnknownHostException, JSONException {
+	public static void main(String[] args) throws UnknownHostException, JSONException, Exception {
 
 		MongoClient client = new MongoClient();
-		DB db = client.getDB("YelpNewDataSet");
-		DBCollection collection = db.getCollection("business");
+		BufferedWriter bw=new BufferedWriter(new FileWriter(new File("D:\\tweets.txt")));
+		DB db = client.getDB("twitter");
+		DBCollection collection = db.getCollection("tweets");
 
-		System.out.println("findOne()");
 		BasicDBObject query=new BasicDBObject();
-		BasicDBObject fields=new BasicDBObject("full_address",1).append("_id", false);
-		DBObject doc = collection.findOne(query,fields);
-		//System.out.println(doc.get("full_address"));
-		String s=doc.get("full_address").toString();
-		System.out.println(s);
+		BasicDBObject fields=new BasicDBObject("text",1).append("_id", false);
+		DBCursor cursor=collection.find(query,fields);
+		int i=0;
+		try {
+			while (cursor.hasNext()) {
+				DBObject cur = cursor.next();
+				bw.write(cur+"\n");
+				i++;
+				if(i%1000000==0)
+					System.out.println("records done "+i);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			cursor.close();
+			bw.close();
+		}
 	}
 }
